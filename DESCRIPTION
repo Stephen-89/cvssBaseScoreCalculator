@@ -1,7 +1,7 @@
 Package: cvssBaseScoreCalculator
 Type: Package
 Title: CVSS v3.1 Base Score Calculation
-Version: 0.1.0
+Version: 0.2.0
 Author: Stephen H.
 Maintainer: The package maintainer <stephenjhoey@outlook.com>
 Description: This package provides functions to calculate CVSS v3.1 base scores from CVSS vectors.

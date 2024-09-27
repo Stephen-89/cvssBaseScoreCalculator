@@ -11,18 +11,49 @@ cvss_v3_base_score <- function(cvss_vector) {
     A = list(N = 0, L = 0.22, H = 0.56)
   )
 
+  # Check if cvss_vector is a non-empty string
+  if (missing(cvss_vector) || !is.character(cvss_vector) || nchar(cvss_vector) == 0) {
+    stop("Invalid input: cvss_vector must be a non-empty string.")
+  }
+
   # Parse the CVSS vector
   components <- strsplit(cvss_vector, "/")[[1]]
   values <- list()
+
   for (component in components) {
     key_value <- strsplit(component, ":")[[1]]
-    values[[key_value[1]]] <- key_value[2]
+
+    # Validate the key-value pair
+    if (length(key_value) != 2) {
+      stop(paste("Invalid component:", component, "- expected format 'KEY:VALUE'."))
+    }
+
+    key <- key_value[1]
+    value <- key_value[2]
+
+    if (!key %in% names(metrics) && key != "S" && key != "PR") {
+      stop(paste("Unknown metric:", key))
+    }
+
+    values[[key]] <- value
+  }
+
+  # Check for missing required fields
+  required_fields <- c("AV", "AC", "PR", "UI", "C", "I", "A", "S")
+  missing_fields <- setdiff(required_fields, names(values))
+  if (length(missing_fields) > 0) {
+    stop(paste("Missing required fields:", paste(missing_fields, collapse = ", ")))
   }
 
   # Get the appropriate PR value based on the scope
   scope <- values$S
   is_scope_changed <- scope == "C"
   pr_key <- paste(values$PR, ifelse(is_scope_changed, "C", "U"), sep = "_")
+
+  # Check if PR key exists in metrics
+  if (!pr_key %in% names(metrics$PR)) {
+    stop(paste("Invalid PR value or scope combination:", pr_key))
+  }
 
   # Calculate the ISCBase
   isc_base <- 1 - (1 - metrics$C[[values$C]]) * (1 - metrics$I[[values$I]]) * (1 - metrics$A[[values$A]])
@@ -57,6 +88,11 @@ cvss_v3_base_score <- function(cvss_vector) {
 }
 
 cvss_v3_base_scores <- function(cvss_vectors) {
+
+  # Check if cvss_vectors is a non-empty vector of strings
+  if (missing(cvss_vectors) || !is.vector(cvss_vectors) || length(cvss_vectors) == 0) {
+    stop("Invalid input: cvss_vectors must be a non-empty vector of strings.")
+  }
 
   # Initialize an empty list to store base scores
   base_scores <- list()
